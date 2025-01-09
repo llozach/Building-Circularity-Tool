@@ -1,5 +1,0 @@
-does it show up on GitHub?
-Commit directly to main
-Test with anaconda prompt
-Generating locally new update to get a non-fast-forward issue
-Checking if I can generate a non-fast-forward issue
