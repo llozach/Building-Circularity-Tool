@@ -11,7 +11,7 @@ from shiny.express import input, ui
 bill_rng = (min(tips.total_bill), max(tips.total_bill))
 
 # Add page title and sidebar
-ui.page_opts(title="Restaurant tipping", fillable=True)
+ui.page_opts(title="Building Circularity Tool", fillable=True)
 
 with ui.sidebar(open="desktop"):
     ui.input_slider(
@@ -33,22 +33,22 @@ with ui.sidebar(open="desktop"):
 
 # Add main content
 ICONS = {
-    "user": fa.icon_svg("user", "regular"),
-    "wallet": fa.icon_svg("wallet"),
+    "user": fa.icon_svg("building", "regular"),
+    "wallet": fa.icon_svg("recycle", "solid"),
     "currency-dollar": fa.icon_svg("dollar-sign"),
     "ellipsis": fa.icon_svg("ellipsis"),
 }
 
 with ui.layout_columns(fill=False):
     with ui.value_box(showcase=ICONS["user"]):
-        "Total tippers"
+        "Building project"
 
         @render.express
         def total_tippers():
             tips_data().shape[0]
 
     with ui.value_box(showcase=ICONS["wallet"]):
-        "Average tip"
+        "Project circularity score"
 
         @render.express
         def average_tip():
@@ -58,7 +58,7 @@ with ui.layout_columns(fill=False):
                 f"{perc.mean():.1%}"
 
     with ui.value_box(showcase=ICONS["currency-dollar"]):
-        "Average bill"
+        "Project cost"
 
         @render.express
         def average_bill():
