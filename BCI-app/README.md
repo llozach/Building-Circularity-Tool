@@ -1,1 +1,3 @@
-This template gives you a more "complete" dashboard for exploring the tips dataset. For an overview of what's here, visit [this article](https://shiny.posit.co/py/docs/user-interfaces.html).
+This web-app is under development. It aims at quantifying the circularity performances of a construction project, considering reuse, recycling, and repurposing strategies.
+
+The methodology relies on the Material Circularity Indicator as defined by the Ellen MacArthur Foundation.
