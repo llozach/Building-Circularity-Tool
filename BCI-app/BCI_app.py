@@ -4,13 +4,11 @@ import numpy as np
 import pandas as pd
 
 # Load data and compute static values
-from shared import app_dir, tips
+from shared import app_dir
 from shinywidgets import render_plotly
 
 from shiny import reactive, render
 from shiny.express import input, ui
-
-bill_rng = (min(tips.total_bill), max(tips.total_bill))
 
 # Add page title and sidebar
 ui.page_opts(title="Building Circularity Tool", fillable=True)
