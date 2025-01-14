@@ -10,6 +10,12 @@ from shinywidgets import render_plotly
 from shiny import reactive, render
 from shiny.express import input, ui
 
+#Add some CSS to the app
+
+ui.tags.style(
+    ".card-header { color:white; background:#5e5a5a !important; }"
+)
+
 # Add page title and sidebar
 ui.page_opts(title="Building Circularity Tool", fillable=True)
 
@@ -163,6 +169,38 @@ with ui.layout_columns():
                 values=product_data.values,
                 names=product_data.index,
                 title=f"Strategies for {input.plot_selection()}",
+            )
+#Attempt to define some checkboxes for calculating the disassembly potential
+
+with ui.layout_columns():
+    with ui.card(full_screen=True):
+        with ui.card_header("Disassembly potential"):
+            ui.input_checkbox_group(
+                "Accessibility",
+                "Accessibility to connection",
+                [
+                "Accessible",
+                "Accesible with additional operation which causes no damage",
+                "Accessible with additional operation which is reparable damage",
+                "Accessible with additional operation which causes damage",
+                "Not accessible, total damage"
+                ],
+                inline=False,
+                width="100%",
+            )
+            ui.input_checkbox_group(
+                "Type",
+                "Type of connection",
+                [
+                    "Accessory external connection or connection system",
+                    "Direct connection with additional fixing devices",
+                    "Direct integral connection with inserts (pin)",
+                    "Filled soft chemical connection",
+                    "Filled hard chemical connection",
+                    "Direct chemical connection"
+                ],
+                inline=False,
+                width="100%",
             )
 
 ui.include_css(app_dir / "styles.css")
