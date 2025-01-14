@@ -170,17 +170,18 @@ with ui.layout_columns():
                 names=product_data.index,
                 title=f"Strategies for {input.plot_selection()}",
             )
+
 #Attempt to define some checkboxes for calculating the disassembly potential
 
-with ui.layout_columns():
+with (ui.layout_columns()):
     with ui.card(full_screen=True):
-        with ui.card_header("Disassembly potential"):
+        with ui.card_header("Determining Disassembly factors"):
             ui.input_checkbox_group(
                 "Accessibility",
                 "Accessibility to connection",
                 [
                 "Accessible",
-                "Accesible with additional operation which causes no damage",
+                "Accessible with additional operation which causes no damage",
                 "Accessible with additional operation which is reparable damage",
                 "Accessible with additional operation which causes damage",
                 "Not accessible, total damage"
@@ -202,6 +203,42 @@ with ui.layout_columns():
                 inline=False,
                 width="100%",
             )
+
+    with ui.card(full_screen=True):
+        ui.card_header("Disassembly potential")
+
+        @render.data_frame
+        def DP():
+            ddf = np.zeros((2, 1))
+
+            if DDF_input()[0] == "Accessible":
+                ddf[0,0] = 1
+            elif DDF_input()[0] == "Accessible with additional operation which causes no damage":
+                ddf[0,0] = 0.8
+            elif DDF_input()[0] == "Accessible with additional operation which is reparable damage":
+                ddf[0,0] = 0.6
+            elif DDF_input()[0] == "Accessible with additional operation which causes damage":
+                ddf[0,0] = 0.4
+            elif DDF_input()[0] == "Not accessible, total damage":
+                ddf[0,0] = 0.1
+
+            if input.Type() == "Accessory external connection or connection system":
+                ddf[1,0] = 1
+            elif input.Type() == "Direct connection with additional fixing devices":
+                ddf[1,0] = 0.8
+            elif input.Type() == "Direct integral connection with inserts (pin)":
+                ddf[1,0] = 0.6
+            elif input.Type() == "Filled soft chemical connection":
+                ddf[1,0] = 0.2
+            elif input.Type() == "Filled hard chemical connection":
+                ddf[1,0] = 0.1
+            elif input.Type() == "Direct chemical connection":
+                ddf[1,0] = 0.1
+
+            df = pd.DataFrame(ddf, columns=["DDF score"],
+                              index=["Accessibility to connection", "Type of connection"])
+
+            return render.DataGrid(df)
 
 ui.include_css(app_dir / "styles.css")
 
@@ -246,10 +283,15 @@ def project_cost():
     cost_per_kg_V = 12 #in USD
     cost_per_kg_other = 6
     return(V*cost_per_kg_V + (M-V)*cost_per_kg_other)
+
+@reactive.calc
+def DDF_input():
+    return(input.Accessibility(), input.Type())
+
 @reactive.effect
 @reactive.event(input.reset)
 def _():
-    ui.update_slider("total_bill", value=bill_rng)
-    ui.update_checkbox_group("time", selected=["Lunch", "Dinner"])
+    ui.update_checkbox_group("Accessibility")
+    #ui.update_slider("total_bill", value=bill_rng)
 
 
