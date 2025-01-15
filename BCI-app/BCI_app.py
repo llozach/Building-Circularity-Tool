@@ -74,7 +74,7 @@ with ui.sidebar(open="desktop"):
     )
     ui.input_slider(
         "M_av",
-        "Average product lifetime",
+        "Average product mass",
         min=0,
         max=100,
         value=50,
@@ -97,7 +97,7 @@ with ui.sidebar(open="desktop"):
         post=".unit",
     )
     ui.input_checkbox_group(
-        "lifetime",
+        "utility",
         "Available data",
         ["Mass", "Lifetime", "Functional units"],
         selected=["Mass", "Lifetime", "Functional units"],
@@ -222,8 +222,16 @@ with ((ui.layout_columns())):
 
 with ((ui.layout_columns())):
     with ui.card(full_screen=True):
-        ui.card_header("Final")
+        ui.card_header("Building Circularity Indicator")
         "Trying to display some text in the card"
+        with ui.value_box(showcase=ICONS["building"]):
+            "Whole Building Circularity Indicator"
+
+
+            @render.express
+            def building_indicator():
+                f"{bci():.1%}"
+
 
 # Add CSS styles to the app
 ui.include_css(app_dir / "styles.css")
@@ -255,8 +263,17 @@ def mci():
     u = input.U()
     u_av = input.U_av()
     m_av = input.M_av()
+    x_param = input.utility()
 
     linear_flow_index = (v+w) / (2*m + (w_f-w_c)/2)
+
+    if "Mass" not in x_param:
+        m, m_av = 1, 1
+    elif "Lifetime" not in x_param:
+        lifetime, lifetime_av = 1, 1
+    elif "Functional units" not in x_param:
+        u, u_av = 1, 1
+
     x = (lifetime*u*m) / (lifetime_av*u_av*m_av)
     f = 0.9/x
     return max(0, 1-linear_flow_index*f)
@@ -301,7 +318,15 @@ def ddf_input():
     elif t == "Direct chemical connection":
         typ = 0.1
 
-    return np.array([["Accessibility to connection", acc],["Type of connection", typ]])
+    return np.array([["Accessibility to connection", acc], ["Type of connection", typ]])
+
+
+@reactive.calc
+def bci():
+    acc = ddf_input()[0][1]
+    typ = ddf_input()[1][1]
+    pci = mci()
+    return (float(acc)+float(typ))/2*pci
 
 
 @reactive.effect
