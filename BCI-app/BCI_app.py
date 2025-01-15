@@ -219,12 +219,7 @@ with ((ui.layout_columns())):
     with ui.card(full_screen=True):
         ui.card_header("Final")
 
-        @render.data_frame
-        def disassembly_potential():
 
-            df = pd.DataFrame(ddf_input(), columns=["DDF name", "DDF score"])
-
-            return render.DataGrid(df)
 #Add CSS styles to the app
 ui.include_css(app_dir / "styles.css")
 
