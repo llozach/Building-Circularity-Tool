@@ -176,21 +176,20 @@ with ui.layout_columns():
 with ((ui.layout_columns())):
     with ui.card(full_screen=True):
         ui.card_header("Determining Disassembly factors")
-        ui.input_checkbox_group(
+        ui.input_radio_buttons(
             "Accessibility",
             "Accessibility to connection",
             [
-            "Accessible",
-            "Accessible with additional operation which causes no damage",
-            "Accessible with additional operation which is reparable damage",
-            "Accessible with additional operation which causes damage",
-            "Not accessible, total damage"
+                "Accessible",
+                "Accessible with additional operation which causes no damage",
+                "Accessible with additional operation which is reparable damage",
+                "Accessible with additional operation which causes damage",
+                "Not accessible, total damage"
             ],
             inline=False,
             width="100%",
-            selected=["Accessible"]
         )
-        ui.input_checkbox_group(
+        ui.input_radio_buttons(
             "Type",
             "Type of connection",
             [
@@ -203,11 +202,10 @@ with ((ui.layout_columns())):
             ],
             inline=False,
             width="100%",
-            selected=["Accessory external connection or connection system"]
         )
 
     with ui.card(full_screen=True):
-        ui.card_header("Disassembly potential")
+        ui.card_header("Whole Building Circularity Indicator")
 
         @render.data_frame
         def disassembly_potential():
@@ -216,6 +214,18 @@ with ((ui.layout_columns())):
 
             return render.DataGrid(df)
 
+
+with ((ui.layout_columns())):
+    with ui.card(full_screen=True):
+        ui.card_header("Final")
+
+        @render.data_frame
+        def disassembly_potential():
+
+            df = pd.DataFrame(ddf_input(), columns=["DDF name", "DDF score"])
+
+            return render.DataGrid(df)
+#Add CSS styles to the app
 ui.include_css(app_dir / "styles.css")
 
 # --------------------------------------------------------
@@ -269,30 +279,29 @@ def ddf_input():
     T = input.Type()
     print(A,T)
     acc, typ = 0, 0
-    if A != ():
-        if A[0] == 'Accessible':
-            acc = 1
-        elif A[0] == "Accessible with additional operation which causes no damage":
-            acc = 0.8
-        elif A[0] == "Accessible with additional operation which is reparable damage":
-            acc = 0.6
-        elif A[0] == "Accessible with additional operation which causes damage":
-            acc = 0.4
-        elif A[0] == "Not accessible, total damage":
-            acc = 0.1
-    if T[0] != ():
-        if T[0] == "Accessory external connection or connection system":
-            typ = 1
-        elif T[0] == "Direct connection with additional fixing devices":
-            typ = 0.8
-        elif T[0] == "Direct integral connection with inserts (pin)":
-            typ = 0.6
-        elif T[0] == "Filled soft chemical connection":
-            typ = 0.2
-        elif T[0] == "Filled hard chemical connection":
-            typ = 0.1
-        elif T[0] == "Direct chemical connection":
-            typ = 0.1
+    if A == 'Accessible':
+        acc = 1
+    elif A == "Accessible with additional operation which causes no damage":
+        acc = 0.8
+    elif A == "Accessible with additional operation which is reparable damage":
+        acc = 0.6
+    elif A == "Accessible with additional operation which causes damage":
+        acc = 0.4
+    elif A == "Not accessible, total damage":
+        acc = 0.1
+
+    if T == "Accessory external connection or connection system":
+        typ = 1
+    elif T == "Direct connection with additional fixing devices":
+        typ = 0.8
+    elif T == "Direct integral connection with inserts (pin)":
+        typ = 0.6
+    elif T == "Filled soft chemical connection":
+        typ = 0.2
+    elif T == "Filled hard chemical connection":
+        typ = 0.1
+    elif T == "Direct chemical connection":
+        typ = 0.1
     print([[A, T],[acc, typ]])
     print(acc, typ)
     return(np.array([["Accessibility to connection", acc],["Type of connection", typ]]))
