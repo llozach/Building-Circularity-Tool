@@ -1,0 +1,12 @@
+{
+    "https://api.shinyapps.io": {
+        "server_url": "https://api.shinyapps.io",
+        "filename": "Z:\\repositories\\Building-Circularity-Tool\\BCI-app",
+        "app_url": "https://circularity-metrics-for-the-built-environment.shinyapps.io/building-circularity-tool1/",
+        "app_id": 13725394,
+        "app_guid": null,
+        "title": "Building-Circularity-Tool",
+        "app_mode": "python-shiny",
+        "app_store_version": 1
+    }
+}
