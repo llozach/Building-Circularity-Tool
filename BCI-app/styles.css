@@ -10,3 +10,8 @@
 .popover .btn-close {
   filter: var(--bs-btn-close-white-filter);
 }
+
+.card-header {
+  background-color: #5e5a5a !important;
+  color: white;
+}

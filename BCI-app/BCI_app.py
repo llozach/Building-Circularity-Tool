@@ -6,18 +6,16 @@ import pandas as pd
 # Load data and compute static values
 from shared import app_dir
 from shinywidgets import render_plotly
+from functools import partial
 
 from shiny import reactive, render
 from shiny.express import input, ui
+from shiny.ui import page_navbar
 
 #Add some CSS to the app
 
-ui.tags.style(
-    ".card-header { color:white; background:#5e5a5a !important; }"
-)
-
 # Add page title and sidebar
-ui.page_opts(title="Building Circularity Tool", fillable=True)
+ui.page_opts(title="Building Circularity Tool", fillable=False)
 
 with ui.sidebar(open="desktop"):
     ui.input_slider(
@@ -118,6 +116,7 @@ ICONS = {
 
 R_strategies = pd.DataFrame(np.array([[0.1, 0.2, 0.3, 0.4],[0.25, 0.25, 0.25, 0.25],[0.9, 0, 0.1, 0]]), columns=["Virgin", "Reused", "Recycled", "Repurposed"], index=["Product 1", "Product 2", "Product 3"])
 
+
 with ui.layout_columns(fill=False):
     with ui.value_box(showcase=ICONS["building"]):
         "Linear Flow Index"
@@ -140,6 +139,8 @@ with ui.layout_columns(fill=False):
         def average_bill():
             f"${project_cost():.2f}"
 
+
+"Section 1: Assessing Product Circularity"
 
 with ui.layout_columns():
     with ui.card(full_screen=True):
@@ -172,6 +173,7 @@ with ui.layout_columns():
             )
 
 #Define checkboxes for calculating the disassembly potential
+"Section 2: Assessing Product Disassembly Potential"
 
 with ((ui.layout_columns())):
     with ui.card(full_screen=True):
@@ -214,11 +216,12 @@ with ((ui.layout_columns())):
 
             return render.DataGrid(df)
 
+"Section 3: Assessing Whole Building Circularity Indicator"
 
 with ((ui.layout_columns())):
     with ui.card(full_screen=True):
         ui.card_header("Final")
-
+        "Trying to display some text in the card"
 
 #Add CSS styles to the app
 ui.include_css(app_dir / "styles.css")
@@ -270,36 +273,36 @@ def project_cost():
 
 @reactive.calc
 def ddf_input():
-    A = input.Accessibility()
-    T = input.Type()
-    print(A,T)
+    a = input.Accessibility()
+    t = input.Type()
+
     acc, typ = 0, 0
-    if A == 'Accessible':
+
+    if a == 'Accessible':
         acc = 1
-    elif A == "Accessible with additional operation which causes no damage":
+    elif a == "Accessible with additional operation which causes no damage":
         acc = 0.8
-    elif A == "Accessible with additional operation which is reparable damage":
+    elif a == "Accessible with additional operation which is reparable damage":
         acc = 0.6
-    elif A == "Accessible with additional operation which causes damage":
+    elif a == "Accessible with additional operation which causes damage":
         acc = 0.4
-    elif A == "Not accessible, total damage":
+    elif a == "Not accessible, total damage":
         acc = 0.1
 
-    if T == "Accessory external connection or connection system":
+    if t == "Accessory external connection or connection system":
         typ = 1
-    elif T == "Direct connection with additional fixing devices":
+    elif t == "Direct connection with additional fixing devices":
         typ = 0.8
-    elif T == "Direct integral connection with inserts (pin)":
+    elif t == "Direct integral connection with inserts (pin)":
         typ = 0.6
-    elif T == "Filled soft chemical connection":
+    elif t == "Filled soft chemical connection":
         typ = 0.2
-    elif T == "Filled hard chemical connection":
+    elif t == "Filled hard chemical connection":
         typ = 0.1
-    elif T == "Direct chemical connection":
+    elif t == "Direct chemical connection":
         typ = 0.1
-    print([[A, T],[acc, typ]])
-    print(acc, typ)
-    return(np.array([["Accessibility to connection", acc],["Type of connection", typ]]))
+
+    return np.array([["Accessibility to connection", acc],["Type of connection", typ]])
 
 
 @reactive.effect
