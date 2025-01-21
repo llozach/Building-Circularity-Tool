@@ -1,5 +1,3 @@
-# just adding this comment to test git commit from within pyCharm
-
 import faicons as fa
 import plotly.express as px
 import numpy as np
