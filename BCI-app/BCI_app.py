@@ -118,7 +118,6 @@ R_strategies = pd.DataFrame(
     index=["Product 1", "Product 2", "Product 3"]
 )
 
-
 with ui.layout_columns(fill=False):
     with ui.value_box(showcase=ICONS["building"]):
         "Linear Flow Index"
