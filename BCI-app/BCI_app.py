@@ -13,8 +13,9 @@ from shiny.express import input, ui
 # from shiny.ui import page_navbar # used for creating navigation bars
 import ibis
 import helpers
+
 # Initialize the Ibis connection
-con = ibis.duckdb.connect(database=':memory:')
+#con = ibis.duckdb.connect(database=':memory:')
 
 # Add page title and sidebar
 ui.page_opts(title="Building Circularity Tool", fillable=False)
