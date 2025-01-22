@@ -150,7 +150,7 @@ with ui.layout_columns():
 
         @render.data_frame
         def table():
-            return render.DataGrid(R_strategies)
+            return render.DataGrid(R_strategies, editable=True)
 
     with ui.card(full_screen=True):
         with ui.card_header(class_="d-flex justify-content-between align-items-center"):
@@ -166,7 +166,7 @@ with ui.layout_columns():
 
         @render_plotly
         def scatterplot():
-            product_data = R_strategies.loc[input.plot_selection()]
+            product_data = table.data_view().loc[input.plot_selection()]
             return px.pie(
                 product_data,
                 values=product_data.values,
