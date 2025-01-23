@@ -1,21 +1,39 @@
+#%% imports
 import faicons as fa
 import plotly.express as px
 import numpy as np
 import pandas as pd
-
 # Load data and compute static values
-from shared import app_dir
 from shinywidgets import render_plotly
 # from functools import partial # used for creating navigation bars
-
 from shiny import reactive, render
 from shiny.express import input, ui
 # from shiny.ui import page_navbar # used for creating navigation bars
-import ibis
-import helpers
+import duckdb
+#import ibis
+#import helpers
+#import os
+from pathlib import Path
 
-# Initialize the Ibis connection
-#con = ibis.duckdb.connect(database=':memory:')
+#%%
+# Defining project paths
+
+app_dir = Path(__file__).parent
+data_dir = app_dir / "data"
+
+#%%
+
+# Checking whether using the database connection or not
+
+database = True
+
+# open connection to a building database file 'building_data.db'
+if database:
+    con = duckdb.connect(data_dir / "building_data.db")
+
+
+#%%
+# Defining the app functionalities and layout
 
 # Add page title and sidebar
 ui.page_opts(title="Building Circularity Tool", fillable=False)
@@ -117,11 +135,24 @@ ICONS = {
     "cost": fa.icon_svg("dollar-sign"),
 }
 
-R_strategies = pd.DataFrame(
-    np.array([[0.1, 0.2, 0.3, 0.4],[0.25, 0.25, 0.25, 0.25],[0.9, 0, 0.1, 0]]),
-    columns=["Virgin", "Reused", "Recycled", "Repurposed"],
-    index=["Product 1", "Product 2", "Product 3"]
-)
+if database:
+    R_strategies = con.table("r_strategies").df()
+    R_strategies.drop(columns=["Product"], inplace=True)
+    print(R_strategies)
+
+    default_building_data = pd.DataFrame(
+        {"Virgin": 0.0, "Reused": 0.0, "Recycled": 0.0, "Repurposed": 0.0},
+        index=["New product"]
+    )
+
+else:
+    R_strategies = pd.DataFrame(
+        np.array([[0.1, 0.2, 0.3, 0.4],[0.25, 0.25, 0.25, 0.25],[0.9, 0, 0.1, 0]]),
+        columns=["Virgin", "Reused", "Recycled", "Repurposed"])
+    # ,index=["Product 1", "Product 2", "Product 3"]
+    # )
+    print(R_strategies)
+
 
 with ui.layout_columns(fill=False):
     with ui.value_box(showcase=ICONS["building"]):
@@ -156,6 +187,17 @@ with ui.layout_columns():
         def table():
             return render.DataGrid(R_strategies, editable=True)
 
+        if database:
+
+            ui.markdown("Add new products to the table")
+
+            @render.data_frame
+            def building_data_input():
+                return render.DataGrid(default_building_data, editable=True)
+
+
+            ui.input_action_button("storing_data", "Store new product data")
+
     with ui.card(full_screen=True):
         with ui.card_header(class_="d-flex justify-content-between align-items-center"):
             "Circularity pie chart"
@@ -164,13 +206,13 @@ with ui.layout_columns():
                 ui.input_radio_buttons(
                     "plot_selection",
                     None,
-                    list(R_strategies.index),
+                    ["Product " + str(prod+1) for prod in list(R_strategies.index)],
                     inline=True,
                 )
 
         @render_plotly
         def scatterplot():
-            product_data = table.data_view().loc[input.plot_selection()]
+            product_data = table.data_view().loc[int(input.plot_selection()[-1:])-1]
             return px.pie(
                 product_data,
                 values=product_data.values,
@@ -240,9 +282,11 @@ with ((ui.layout_columns())):
 # Add CSS styles to the app
 ui.include_css(app_dir / "styles.css")
 
-# --------------------------------------------------------
+# explicitly close the connection
+#con.close()
+
+#%%
 # Reactive calculations and effects
-# --------------------------------------------------------
 
 
 @reactive.calc
@@ -338,4 +382,27 @@ def bci():
 def _():
     ui.update_checkbox_group("Accessibility")
 
+# Capture the input data from the building_data_input() table
 
+
+if database:
+
+    @reactive.effect
+    @reactive.event(input.storing_data)
+    def store_new_data():
+        new_data = building_data_input.data_view().loc['New product']
+        product_name = 'Product ' + str(len(R_strategies)+1)
+        virgin = new_data['Virgin']
+        reused = new_data['Reused']
+        recycled = new_data['Recycled']
+        repurposed = new_data['Repurposed']
+
+        # Insert the new data into the database
+        con.execute(f"""
+            INSERT INTO r_strategies (Product, Virgin, Reused, Recycled, Repurposed)
+            VALUES ('{product_name}', {virgin}, {reused}, {recycled}, {repurposed})
+        """)
+        con.sql("SELECT * FROM r_strategies").show()
+
+    #db_input = building_data_input.data_view().loc['New product']
+    # con.sql("INSERT INTO r_strategies VALUES ('New Product', 0.1, 0.2, 0.3, 0.4)")

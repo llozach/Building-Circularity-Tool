@@ -8,7 +8,7 @@ os.chdir(p.parent)
 data_dir = os.getcwd() + "\\data"
 print(data_dir)
 
-# create a connection to a file called 'file.db'
+# create a connection to a building data file 'building_data.db'
 con = duckdb.connect(data_dir + "\\building_data.db")
 
 # create the R strategies table and load data into it
@@ -22,4 +22,3 @@ con.table("r_strategies").show()
 
 # explicitly close the connection
 con.close()
-# Note: connections also closed implicitly when they go out of scope

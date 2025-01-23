@@ -3,4 +3,6 @@ shiny
 shinywidgets
 plotly
 pandas
+numpy
 ridgeplot
+duckdb
