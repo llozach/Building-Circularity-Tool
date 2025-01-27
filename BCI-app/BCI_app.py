@@ -137,12 +137,12 @@ ICONS = {
 
 if database:
     R_strategies = con.table("r_strategies").df()
-    R_strategies.drop(columns=["Product"], inplace=True)
+    # R_strategies.drop(columns=["Product"], inplace=True)
     print(R_strategies)
 
     default_building_data = pd.DataFrame(
-        {"Virgin": 0.0, "Reused": 0.0, "Recycled": 0.0, "Repurposed": 0.0},
-        index=["New product"]
+        {"Product": "new product", "Virgin": 0.0, "Reused": 0.0, "Recycled": 0.0, "Repurposed": 0.0},
+        index=["Product"]
     )
 
 else:
@@ -390,19 +390,26 @@ if database:
     @reactive.effect
     @reactive.event(input.storing_data)
     def store_new_data():
-        new_data = building_data_input.data_view().loc['New product']
-        product_name = 'Product ' + str(len(R_strategies)+1)
-        virgin = new_data['Virgin']
-        reused = new_data['Reused']
-        recycled = new_data['Recycled']
-        repurposed = new_data['Repurposed']
+        # Extract new data as scalar values
+        new_data = building_data_input.data_view()
+        product_name = str(new_data['Product'].iloc[0])  # Convert to string if needed
+        virgin = float(new_data['Virgin'].iloc[0])  # Convert to float
+        reused = float(new_data['Reused'].iloc[0])  # Convert to float
+        recycled = float(new_data['Recycled'].iloc[0])  # Convert to float
+        repurposed = float(new_data['Repurposed'].iloc[0])  # Convert to float
 
-        # Insert the new data into the database
-        con.execute(f"""
-            INSERT INTO r_strategies (Product, Virgin, Reused, Recycled, Repurposed)
-            VALUES ('{product_name}', {virgin}, {reused}, {recycled}, {repurposed})
-        """)
-        con.sql("SELECT * FROM r_strategies").show()
+        try:
+            # Use a parameterized query to insert the data
+            con.execute("""
+                INSERT INTO r_strategies (Product, Virgin, Reused, Recycled, Repurposed)
+                VALUES (?, ?, ?, ?, ?)
+            """, [product_name, virgin, reused, recycled, repurposed])
+
+            # Optionally display the updated table
+            con.sql("SELECT * FROM r_strategies").show()
+            print("Data inserted successfully.")
+        except Exception as e:
+            print(f"An error occurred: {e}")
 
     #db_input = building_data_input.data_view().loc['New product']
     # con.sql("INSERT INTO r_strategies VALUES ('New Product', 0.1, 0.2, 0.3, 0.4)")
