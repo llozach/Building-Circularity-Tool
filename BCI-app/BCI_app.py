@@ -141,7 +141,7 @@ if database:
     print(R_strategies)
 
     default_building_data = pd.DataFrame(
-        {"Product": "new product", "Virgin": 0.0, "Reused": 0.0, "Recycled": 0.0, "Repurposed": 0.0},
+        {"Product": "Product "+str(len(R_strategies)+1), "Virgin": 0.0, "Reused": 0.0, "Recycled": 0.0, "Repurposed": 0.0},
         index=["Product"]
     )
 
@@ -177,11 +177,19 @@ with ui.layout_columns(fill=False):
             f"${project_cost():.2f}"
 
 
-"Section 1: Assessing Product Circularity"
+ui.markdown(
+    """
+    ## Section 1: Product Circularity
+    
+    The following section displays the different **circularity strategies** applied to each product,
+    and allows you to feed the database with new product data.
+    
+    """
+    )
 
 with ui.layout_columns():
     with ui.card(full_screen=True):
-        ui.card_header("Circularity strategies applied for each product")
+        ui.card_header("Circular strategies for each product")
 
         @render.data_frame
         def table():
@@ -189,7 +197,11 @@ with ui.layout_columns():
 
         if database:
 
-            ui.markdown("Add new products to the table")
+            ui.markdown(
+            """
+            `Write a product in the database by entering data:`
+            """
+            )
 
             @render.data_frame
             def building_data_input():
@@ -200,7 +212,7 @@ with ui.layout_columns():
 
     with ui.card(full_screen=True):
         with ui.card_header(class_="d-flex justify-content-between align-items-center"):
-            "Circularity pie chart"
+            "Product circularity pie chart"
             with ui.popover(title="Product to display", placement="top"):
                 ICONS["MCI/BCI"]
                 ui.input_radio_buttons(
@@ -220,9 +232,18 @@ with ui.layout_columns():
                 title=f"Strategies for {input.plot_selection()}",
             )
 
-# Define checkboxes for calculating the disassembly potential
-"Section 2: Assessing Product Disassembly Potential"
 
+ui.markdown(
+    """
+    ## Section 2: Product Disassembly Potential
+
+    The following section relies on Durmisevic Determining Disassembly Factors (DDFs) for quantifying the disassembly
+    potential of each product based on fuzzy variables.
+
+    """
+)
+
+# Define checkboxes for calculating the disassembly potential
 with ((ui.layout_columns())):
     with ui.card(full_screen=True):
         ui.card_header("Determining Disassembly factors")
@@ -255,7 +276,7 @@ with ((ui.layout_columns())):
         )
 
     with ui.card(full_screen=True):
-        ui.card_header("Whole Building Circularity Indicator")
+        ui.card_header("Disassembly Potential")
 
         @render.data_frame
         def disassembly_potential():
@@ -264,12 +285,21 @@ with ((ui.layout_columns())):
 
             return render.DataGrid(df)
 
-"Section 3: Assessing Whole Building Circularity Indicator"
+
+ui.markdown(
+    """
+    ## Section 3: Whole Building Circularity Indicator
+
+    The following section aggregates both product **circularity** and **disassembly** potential into a final indicator
+    at the building level. Some tracks for improvement are also suggested.
+
+    """
+)
 
 with ((ui.layout_columns())):
     with ui.card(full_screen=True):
         ui.card_header("Building Circularity Indicator")
-        "Trying to display some text in the card"
+
         with ui.value_box(showcase=ICONS["building"]):
             "Whole Building Circularity Indicator"
 
@@ -277,6 +307,17 @@ with ((ui.layout_columns())):
             @render.express
             def building_indicator():
                 f"{bci():.1%}"
+
+    with ui.card(full_screen=True):
+        ui.card_header("Potential Tracks for Improvement")
+        ui.markdown(
+            """
+            The building circularity can be improved by:
+            - **Increasing products lifetime**
+            - **Reducing products mass**
+            - **Include design for disassembly**            
+            """
+        )
 
 
 # Add CSS styles to the app
