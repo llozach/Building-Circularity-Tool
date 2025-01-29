@@ -133,6 +133,7 @@ ICONS = {
     "building": fa.icon_svg("building", "regular"),
     "MCI/BCI": fa.icon_svg("recycle", "solid"),
     "cost": fa.icon_svg("dollar-sign"),
+    "gear": fa.icon_svg("gears", "solid"),
 }
 
 if database:
@@ -156,25 +157,25 @@ else:
 
 with ui.layout_columns(fill=False):
     with ui.value_box(showcase=ICONS["building"]):
-        "Linear Flow Index"
+        "Building Circularity Indicator"
 
         @render.express
-        def linear_flow():
-            f"{lfi():.1%}"
+        def building_circularity_score():
+            f"""{bci():.1%}"""
 
     with ui.value_box(showcase=ICONS["MCI/BCI"]):
         "Material Circularity Indicator"
 
         @render.express
         def material_circularity():
-            f"{mci():.1%}"
+            f"""{mci():.1%}"""
 
     with ui.value_box(showcase=ICONS["cost"]):
         "Project cost"
 
         @render.express
         def average_bill():
-            f"${project_cost():.2f}"
+            f"""${project_cost():.2f}"""
 
 
 ui.markdown(
@@ -185,7 +186,7 @@ ui.markdown(
     and allows you to feed the database with new product data.
     
     """
-    )
+)
 
 with ui.layout_columns():
     with ui.card(full_screen=True):
@@ -198,9 +199,9 @@ with ui.layout_columns():
         if database:
 
             ui.markdown(
-            """
-            `Write a product in the database by entering data:`
-            """
+                """
+                `Write a product in the database by entering data:`
+                """
             )
 
             @render.data_frame
@@ -246,45 +247,125 @@ ui.markdown(
 # Define checkboxes for calculating the disassembly potential
 with ((ui.layout_columns())):
     with ui.card(full_screen=True):
-        ui.card_header("Determining Disassembly factors")
-        ui.input_radio_buttons(
-            "Accessibility",
-            "Accessibility to connection",
-            [
-                "Accessible",
-                "Accessible with additional operation which causes no damage",
-                "Accessible with additional operation which is reparable damage",
-                "Accessible with additional operation which causes damage",
-                "Not accessible, total damage"
-            ],
-            inline=False,
-            width="100%",
-        )
-        ui.input_radio_buttons(
-            "Type",
-            "Type of connection",
-            [
-                "Accessory external connection or connection system",
-                "Direct connection with additional fixing devices",
-                "Direct integral connection with inserts (pin)",
-                "Filled soft chemical connection",
-                "Filled hard chemical connection",
-                "Direct chemical connection"
-            ],
-            inline=False,
-            width="100%",
-        )
+        ui.card_header("Determining Disassembly factors (DDFs)")
+        with ui.div(style="max-height: 400px; overflow-y: auto;"):
+            ui.markdown(
+                """
+                **Accessibility to connection**
+                """
+            )
+            ui.input_radio_buttons(
+                "Accessibility",
+                "",
+                [
+                    "Accessible",
+                    "Accessible with additional operation which causes no damage",
+                    "Accessible with additional operation which is reparable damage",
+                    "Accessible with additional operation which causes damage",
+                    "Not accessible, total damage"
+                ],
+                inline=False,
+                width="100%",
+            )
+            ui.markdown(
+                """
+                **Type of connection**
+                """
+            )
+            ui.input_radio_buttons(
+                "Type",
+                "",
+                [
+                    "Accessory external connection or connection system",
+                    "Direct connection with additional fixing devices",
+                    "Direct integral connection with inserts (pin)",
+                    "Filled soft chemical connection",
+                    "Filled hard chemical connection",
+                    "Direct chemical connection"
+                ],
+                inline=False,
+                width="100%",
+            )
+            ui.markdown(
+                """
+                **Independency**
+                """
+            )
+            ui.input_radio_buttons(
+                "Independency",
+                "",
+                [
+                    "Modular zoning",
+                    "Planned interpenetrating",
+                    "Planned for one solution",
+                    "Unplanned interpenetrating",
+                    "Total dependence"
+                ],
+                inline=False,
+                width="100%",
+            )
+            ui.markdown(
+                """
+                **Method of fabrication**
+                """
+            )
+            ui.input_radio_buttons(
+                "Method",
+                "",
+                [
+                    "Pre-made geometry",
+                    "Half standardized geometry",
+                    "Geometry made on construction site"
+                ],
+                inline=False,
+                width="100%",
+            )
+            ui.markdown(
+                """
+                **Type of relational pattern**
+                """
+            )
+            ui.input_radio_buttons(
+                "Pattern",
+                "",
+                [
+                    "One or two connections",
+                    "Three connections",
+                    "Four connections",
+                    "Five or more connections"
+                ],
+                inline=False,
+                width="100%",
+            )
 
     with ui.card(full_screen=True):
         ui.card_header("Disassembly Potential")
 
+        ui.markdown(
+            """
+            `Qualitative DDFs are allocated a fuzzy variable based on Durmisevic.`
+            """
+        )
+
         @render.data_frame
         def disassembly_potential():
 
-            df = pd.DataFrame(ddf_input(), columns=["DDF name", "DDF score"])
+            df = pd.DataFrame(ddf_input(), columns=["Determining Disassembly Factor", "Score"])
 
             return render.DataGrid(df)
 
+        ui.markdown(
+            """
+            `DDFs are attributed equal weights for the calculation of the disassembly potential.`
+            """
+        )
+
+        with ui.value_box(showcase=ICONS["gear"]):
+            "Disassembly Score"
+
+            @render.express
+            def disassembly_score():
+                f"{dis_pot():.1%}"
 
 ui.markdown(
     """
@@ -381,7 +462,11 @@ def project_cost():
 def ddf_input():
     a = input.Accessibility()
     t = input.Type()
-    acc, typ = 0, 0
+    i = input.Independency()
+    m = input.Method()
+    p = input.Pattern()
+
+    acc, typ, ind, met, pat = 0, 0, 0, 0, 0
 
     if a == 'Accessible':
         acc = 1
@@ -407,15 +492,56 @@ def ddf_input():
     elif t == "Direct chemical connection":
         typ = 0.1
 
-    return np.array([["Accessibility to connection", acc], ["Type of connection", typ]])
+    if i == "Modular zoning":
+        ind = 1
+    elif i == "Planned interpenetrating":
+        ind = 0.8
+    elif i == "Planned for one solution":
+        ind = 0.6
+    elif i == "Unplanned interpenetrating":
+        ind = 0.2
+    elif i == "Total dependence":
+        ind = 0.1
+
+    if m == "Pre-made geometry":
+        met = 1
+    elif m == "Half standardized geometry":
+        met = 0.8
+    elif m == "Geometry made on construction site":
+        met = 0.6
+
+    if p == "One or two connections":
+        pat = 1
+    elif p == "Three connections":
+        pat = 0.8
+    elif p == "Four connections":
+        pat = 0.6
+    elif p == "Five or more connections":
+        pat = 0.2
+
+    return np.array([["Accessibility to connection", acc],
+                     ["Type of connection", typ],
+                     ["Independency", ind],
+                     ["Method of fabrication", met],
+                     ["Type of relational pattern", pat]
+                     ])
+
+
+@reactive.calc
+def dis_pot():
+    acc = ddf_input()[0][1]
+    typ = ddf_input()[1][1]
+    ind = ddf_input()[2][1]
+    met = ddf_input()[3][1]
+    pat = ddf_input()[4][1]
+    return (float(acc)+float(typ)+float(ind)+float(met)+float(pat))/5
 
 
 @reactive.calc
 def bci():
-    acc = ddf_input()[0][1]
-    typ = ddf_input()[1][1]
+    dp = dis_pot()
     pci = mci()
-    return (float(acc)+float(typ))/2*pci
+    return dp*pci
 
 
 @reactive.effect
