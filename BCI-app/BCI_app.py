@@ -39,85 +39,55 @@ if database:
 ui.page_opts(title="Building Circularity Tool", fillable=False)
 
 with ui.sidebar(open="desktop"):
-    ui.input_slider(
-        "M",
-        "Product Mass",
-        min=0,
-        max=100,
-        value=50,
-        post="t",
+    ui.markdown(
+        """
+        **Parameters**
+        """
     )
     ui.input_slider(
-        "V",
-        "Virgin Materials",
+        "F_R",
+        "Input recycled content",
         min=0,
         max=100,
-        value=50,
-        post="t",
+        value=0,
+        post="%",
     )
     ui.input_slider(
-        "W",
-        "Total Waste",
+        "F_U",
+        "Input reused content",
         min=0,
         max=100,
-        value=50,
-        post="t",
+        value=0,
+        post="%",
     )
     ui.input_slider(
-        "W_c",
-        "Recycling waste after collection",
+        "C_R",
+        "Output recycled fraction",
         min=0,
         max=100,
-        value=50,
-        post="t",
+        value=0,
+        post="%",
     )
     ui.input_slider(
-        "W_f",
-        "Recycling waste before production",
+        "C_U",
+        "Output reused fraction",
         min=0,
         max=100,
-        value=50,
-        post="t",
+        value=0,
+        post="%",
     )
     ui.input_slider(
-        "L",
-        "Product lifetime",
+        "E",
+        "Recycling efficiency",
         min=0,
         max=100,
-        value=50,
-        post="yr",
+        value=95,
+        post="%",
     )
-    ui.input_slider(
-        "U",
-        "Product functional unit",
-        min=0,
-        max=100,
-        value=50,
-        post=".unit",
-    )
-    ui.input_slider(
-        "M_av",
-        "Average product mass",
-        min=0,
-        max=100,
-        value=50,
-        post="t",
-    )
-    ui.input_slider(
-        "L_av",
-        "Average product lifetime",
-        min=0,
-        max=100,
-        value=50,
-        post="yr",
-    )
-    ui.input_slider(
-        "U_av",
-        "Average product functional unit",
-        min=0,
-        max=100,
-        value=50,
-        post=".unit",
+    ui.markdown(
+        """
+        **Utility**
+        """
     )
     ui.input_checkbox_group(
         "utility",
@@ -125,6 +95,36 @@ with ui.sidebar(open="desktop"):
         ["Mass", "Lifetime", "Functional units"],
         selected=["Mass", "Lifetime", "Functional units"],
         inline=True,
+    )
+    ui.markdown(
+        """
+        `Product/average product:`
+        """
+    )
+
+    ui.input_slider(
+        "M",
+        "M/M_av",
+        min=1,
+        max=200,
+        value=100,
+        post="%",
+    )
+    ui.input_slider(
+        "L",
+        "L/L_av",
+        min=1,
+        max=200,
+        value=100,
+        post="%",
+    )
+    ui.input_slider(
+        "U",
+        "U/U_av",
+        min=1,
+        max=200,
+        value=100,
+        post="%",
     )
     ui.input_action_button("reset", "Reset filter")
 
@@ -412,50 +412,80 @@ ui.include_css(app_dir / "styles.css")
 
 
 @reactive.calc
+def virgin():
+    m = input.M()
+    fr = input.F_R()/100
+    fu = input.F_U()/100
+    return float(m*(1-fr-fu))
+
+
+@reactive.calc
+def waste_zero():
+    m = input.M()
+    cr = input.C_R()/100
+    cu = input.C_U()/100
+    return float(m*(1-cr-cu))
+
+
+@reactive.calc
+def waste_f():
+    m = input.M()
+    fr = input.F_R()/100
+    ef = input.E()/100
+    return float(m*((1-ef)/ef)*fr)
+
+
+@reactive.calc
+def waste_c():
+    m = input.M()
+    cr = input.C_R()/100
+    ec = input.E()/100
+    return float(m*(1-ec)*cr)
+
+
+@reactive.calc
+def waste_tot():
+    w0 = waste_zero()
+    wf = waste_f()
+    wc = waste_c()
+    return float(w0+(wf+wc)/2)
+
+
+@reactive.calc
 def lfi():
     m = input.M()
-    v = input.V()
-    w = input.W()
-    w_f = input.W_f()
-    w_c = input.W_c()
-    return (v+w)/(2*m + (w_f-w_c)/2)
+    v = virgin()
+    w = waste_tot()
+    w_f = waste_f()
+    w_c = waste_c()
+    return float((v+w)/(2*m + (w_f-w_c)/2))
+
+
+def utility_x():
+    m = input.M()/100
+    lt = input.L()/100
+    u = input.U()/100
+
+    x_param = input.utility()
+    if "Mass" not in x_param:
+        m = 1
+    elif "Lifetime" not in x_param:
+        lt = 1
+    elif "Functional units" not in x_param:
+        u = 1
+
+    return float(lt*u/m)
 
 
 @reactive.calc
 def mci():
-    m = input.M()
-    v = input.V()
-    w = input.W()
-    w_f = input.W_f()
-    w_c = input.W_c()
-    lifetime = input.L()
-    lifetime_av = input.L_av()
-    u = input.U()
-    u_av = input.U_av()
-    m_av = input.M_av()
-    x_param = input.utility()
-
-    linear_flow_index = (v+w) / (2*m + (w_f-w_c)/2)
-
-    if "Mass" not in x_param:
-        m, m_av = 1, 1
-    elif "Lifetime" not in x_param:
-        lifetime, lifetime_av = 1, 1
-    elif "Functional units" not in x_param:
-        u, u_av = 1, 1
-
-    x = (lifetime*u*m) / (lifetime_av*u_av*m_av)
+    linear_flow = lfi()
+    x = utility_x()
     f = 0.9/x
-    return max(0, 1-linear_flow_index*f)
-
-
-@reactive.calc
-def project_cost():
-    m = input.M()
-    v = input.V()
-    cost_per_kg_v = 12  # in USD
-    cost_per_kg_other = 6  # in USD
-    return v*cost_per_kg_v + (m-v)*cost_per_kg_other
+    if 1-linear_flow*f < 0:
+        return 0
+    else:
+        return 1-linear_flow*f
 
 
 @reactive.calc
@@ -544,10 +574,31 @@ def bci():
     return dp*pci
 
 
+@reactive.calc
+def project_cost():
+    m = 1000  # in kg of required materials
+    fr = input.F_R()/100
+    fu = input.F_U()/100
+
+    cost_per_kg_v = 12  # avg price of virgin materials (in USD)
+    cost_per_kg_r = 9  # avg price of recycled materials (in USD)
+    cost_per_kg_u = 4  # avg price of reused materials (in USD)
+
+    return float(m*fr*cost_per_kg_r + m*fu*cost_per_kg_u + (m*(1-fr-fu))*cost_per_kg_v)
+
+
 @reactive.effect
 @reactive.event(input.reset)
 def _():
-    ui.update_checkbox_group("Accessibility")
+    ui.update_checkbox_group("utility", selected=["Mass", "Lifetime", "Functional units"])
+    ui.update_slider("F_R", value=0)
+    ui.update_slider("F_U", value=0)
+    ui.update_slider("C_R", value=0)
+    ui.update_slider("C_U", value=0)
+    ui.update_slider("E", value=95)
+    ui.update_slider("M", value=100)
+    ui.update_slider("L", value=100)
+    ui.update_slider("U", value=100)
 
 # Capture the input data from the building_data_input() table
 
