@@ -126,7 +126,7 @@ with ui.sidebar(open="desktop"):
         value=100,
         post="%",
     )
-    ui.input_action_button("reset", "Reset filter")
+    ui.input_action_button("reset", "Reset")
 
 # Add main content
 ICONS = {
